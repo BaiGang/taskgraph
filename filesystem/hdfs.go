@@ -74,7 +74,13 @@ func (c *HdfsClient) OpenWriteCloser(name string) (io.WriteCloser, error) {
 
 func (c *HdfsClient) Exists(name string) (bool, error) {
 	_, err := c.client.Stat(name)
-	return existCommon(err)
+
+	// XXX(baigang): err may be "EOF", which is not actually an error.
+	// To simplify it, we just check if the err is an IsNotExist one.
+	if err != nil && os.IsNotExist(err) {
+		return false, nil
+	}
+	return true, nil
 }
 
 func (c *HdfsClient) Rename(oldpath, newpath string) error {
